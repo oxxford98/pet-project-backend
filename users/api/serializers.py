@@ -17,6 +17,9 @@ class LoginSerializer(ModelSerializer):
             'is_active',
             'email',
             'last_login',
+            'cellphone',
+            'role',
+            'created_at',
         ]
 
 
@@ -33,6 +36,8 @@ class RegisterSerializer(ModelSerializer):
             'is_superuser',
             'is_active',
             'email',
+            'cellphone',
+            'role',
         ]
 
     def create(self, validated_data):
