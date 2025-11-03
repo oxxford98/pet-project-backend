@@ -157,7 +157,8 @@ def create_user_client(request):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def edit_user_client(request, id_user):
+def edit_user_client(request):
+    id_user = request.user.id
     instance = get_object_or_404(User, id=id_user, deleted_at=None)
 
     request_data = request.data.copy()

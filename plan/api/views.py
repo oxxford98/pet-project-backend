@@ -11,3 +11,8 @@ class PlanApiViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PlanSerializer
     queryset = Plan.objects.all()
+
+    def get_permissions(self):
+        if self.action in 'list' or self.action == 'retrieve':
+            self.permission_classes = [AllowAny,]
+        return super(self.__class__, self).get_permissions()
