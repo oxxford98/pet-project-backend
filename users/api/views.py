@@ -140,7 +140,9 @@ def get_info_user(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_user_client(request):
-    serializer = RegisterSerializer(data=request.data)
+    data = request.data.copy()
+    data['username'] = data.get('email', '')
+    serializer = RegisterSerializer(data=data)
     if serializer.is_valid():
         role_client = get_object_or_404(Role, name=Role.CLIENT)
 

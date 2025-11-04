@@ -20,6 +20,12 @@ class LoginSerializer(ModelSerializer):
             'cellphone',
             'role',
             'created_at',
+            'address',
+            'identification',
+            'birth_date',
+            'hiring_date',
+            'second_name',
+            'second_last_name',
         ]
 
 
@@ -38,6 +44,12 @@ class RegisterSerializer(ModelSerializer):
             'email',
             'cellphone',
             'role',
+            'address',
+            'identification',
+            'birth_date',
+            'hiring_date',
+            'second_name',
+            'second_last_name',
         ]
 
     def create(self, validated_data):
