@@ -47,3 +47,33 @@ class RegisterSerializer(ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    
+    def validate_email(self, value):
+        if not value:
+            raise serializers.ValidationError("Email es requerido")
+        return value.lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    verify_code = serializers.CharField(max_length=20, required=True)
+    new_password = serializers.CharField(min_length=8, required=True)
+    
+    def validate_email(self, value):
+        if not value:
+            raise serializers.ValidationError("Email es requerido")
+        return value.lower()
+    
+    def validate_verify_code(self, value):
+        if not value:
+            raise serializers.ValidationError("Código de verificación es requerido")
+        return value.upper()
+    
+    def validate_new_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres")
+        return value

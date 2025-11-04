@@ -4,14 +4,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from users.api.serializers import LoginSerializer, RegisterSerializer
-from datetime import datetime
+from users.api.serializers import LoginSerializer, RegisterSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from datetime import datetime, timedelta
 from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from role.models import Role
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from users.utils import user_has_any_role
+from users.utils import user_has_any_role, generate_verification_code, send_password_reset_email
+from django.utils import timezone
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -178,3 +179,97 @@ def edit_user_client(request):
         return Response(login_serializer.data, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_password_reset(request):
+    """
+    Endpoint para solicitar el código de verificación para reset de contraseña.
+    Envía un email con el código de verificación.
+    """
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    email = serializer.validated_data['email']
+    
+    try:
+        user = User.objects.get(email=email, deleted_at=None)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'Error al enviar el email. Usuario no existe'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Generar código de verificación
+    verify_code = generate_verification_code()
+    
+    # Guardar código en el usuario con timestamp
+    user.verify_code = verify_code
+    user.updated_at = timezone.now()
+    user.save(update_fields=['verify_code', 'updated_at'])
+    
+    # Enviar email
+    email_sent = send_password_reset_email(user, verify_code)
+    
+    if email_sent:
+        return Response(
+            {'message': 'Código de verificación enviado al email'}, 
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {'error': 'Error al enviar el email. Intenta nuevamente'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_with_code(request):
+    """
+    Endpoint para validar el código de verificación y establecer nueva contraseña.
+    """
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    email = serializer.validated_data['email']
+    verify_code = serializer.validated_data['verify_code']
+    new_password = serializer.validated_data['new_password']
+    
+    try:
+        user = User.objects.get(email=email, deleted_at=None)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'Usuario no encontrado'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Verificar que el código coincida
+    if user.verify_code != verify_code:
+        return Response(
+            {'error': 'Código de verificación inválido'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Verificar que el código no haya expirado (30 minutos)
+    time_diff = timezone.now() - user.updated_at
+    if time_diff > timedelta(minutes=30):
+        return Response(
+            {'error': 'El código de verificación ha expirado'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Actualizar contraseña y limpiar código de verificación
+    user.set_password(new_password)
+    user.verify_code = None
+    user.save(update_fields=['password', 'verify_code'])
+    
+    return Response(
+        {'message': 'Contraseña actualizada exitosamente'}, 
+        status=status.HTTP_200_OK
+    )
