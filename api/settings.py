@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -208,3 +209,6 @@ DEFAULT_FROM_EMAIL = f'Pet Project <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 
 
 # Templates configuration
 TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']
+
+#recaptha
+RECAPTCHA_SECRET_KEY = config('RECAPTCHA_SECRET_KEY', default='')

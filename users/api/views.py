@@ -13,12 +13,34 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.utils import user_has_any_role, generate_verification_code, send_password_reset_email
 from django.utils import timezone
+from django.conf import settings
+import requests
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        recaptcha_token = request.data.get("recaptcha")
+        if not recaptcha_token:
+            return Response({"error": "Missing reCAPTCHA token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        verify_url = "https://www.google.com/recaptcha/api/siteverify"
+        payload = {
+            "secret": settings.RECAPTCHA_SECRET_KEY,
+            "response": recaptcha_token,
+        }
+
+        r = requests.post(verify_url, data=payload)
+        result = r.json()
+
+        if not result.get("success"):
+            return Response({"error": "Invalid reCAPTCHA"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if result.get("score", 1) < 0.5:
+            return Response({"error": "Low reCAPTCHA score, suspected bot"}, status=status.HTTP_400_BAD_REQUEST)
+
+
         response = super().post(request, *args, **kwargs)
         user = User.objects.get(email=request.data['email'])
         user_data = LoginSerializer(user).data
