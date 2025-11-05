@@ -32,7 +32,7 @@ def generate_verification_code(length=6):
 def send_password_reset_email(user, verify_code):
     """Send password reset email with verification code"""
     try:
-        subject = 'Recuperación de Contraseña - Pet Project'
+        subject = 'Recuperación de Contraseña - CanEduca'
         
         # Render HTML template
         html_message = render_to_string('emails/password_reset.html', {
