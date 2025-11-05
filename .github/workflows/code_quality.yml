@@ -11,22 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11]
+        python-version: ["3.9", "3.10", "3.11"]
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
 
     - name: Install dependencies
@@ -37,36 +39,24 @@ jobs:
 
     - name: Run Black (Code Formatter Check)
       run: |
-        black --check --diff --color .
+        black --check --diff --color . || echo "Black formatting issues found"
       continue-on-error: true
 
     - name: Run isort (Import Sorting Check)
       run: |
-        isort --check-only --diff --color .
+        isort --check-only --diff --color . || echo "Import sorting issues found"
       continue-on-error: true
 
     - name: Run Flake8 (Syntax and Style Check)
       run: |
         flake8 . --config=.flake8
-      continue-on-error: false
 
     - name: Run Bandit (Security Check)
       run: |
-        bandit -r . -ll -x "*/tests/*,*/migrations/*,*/static/*,*/venv/*" -f json -o bandit-report.json || true
-        bandit -r . -ll -x "*/tests/*,*/migrations/*,*/static/*,*/venv/*"
+        bandit -r . -ll -x "*/tests/*,*/migrations/*,*/static/*,*/venv/*,*/.venv/*" || echo "Security issues found"
       continue-on-error: true
 
     - name: Run Safety (Dependency Security Check)
       run: |
-        safety check --json --output safety-report.json || true
-        safety check
+        safety check || echo "Dependency security issues found"
       continue-on-error: true
-
-    - name: Upload reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: code-quality-reports-${{ matrix.python-version }}
-        path: |
-          bandit-report.json
-          safety-report.json
