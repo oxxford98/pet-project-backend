@@ -1,10 +1,11 @@
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
 from rest_framework import status
-from plan.models import Plan
-from plan.api.serializers import PlanSerializer
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
+from plan.api.serializers import PlanSerializer
+from plan.models import Plan
 
 
 class PlanApiViewSet(ModelViewSet):
@@ -13,6 +14,8 @@ class PlanApiViewSet(ModelViewSet):
     queryset = Plan.objects.all()
 
     def get_permissions(self):
-        if self.action in 'list' or self.action == 'retrieve':
-            self.permission_classes = [AllowAny,]
+        if self.action in "list" or self.action == "retrieve":
+            self.permission_classes = [
+                AllowAny,
+            ]
         return super(self.__class__, self).get_permissions()

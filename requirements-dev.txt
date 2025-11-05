@@ -1,0 +1,15 @@
+# Herramientas de desarrollo y linting
+# Instalar con: pip install -r requirements-dev.txt
+
+# Herramientas de formato y análisis
+black==23.12.1
+isort==5.13.2
+flake8==7.0.0
+
+# Análisis de seguridad
+bandit==1.7.5
+safety==2.3.4
+
+# Herramientas adicionales opcionales
+pre-commit==3.6.0
+autopep8==2.0.4

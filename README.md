@@ -84,3 +84,45 @@ python manage.py runserver
 #### Cuando se realicen cambios en el código el servidor lo tomará sin necesidad de detenerlo.
 
 #### Estos pasos solo se deben de ejecutar la primera vez. A partir de eso, solo se deben ejecutar los pasos 2.2 y 6 para correr el servidor
+
+---
+
+## 🔍 GitHub Actions - Calidad de Código
+
+Este proyecto incluye GitHub Actions configurados para revisar automáticamente la calidad del código:
+
+### Workflows Configurados
+- **Code Quality Check**: Análisis completo con Black, isort, Flake8, Bandit y Safety
+- **Basic Syntax Check**: Verificaciones básicas de sintaxis y configuración Django
+
+### Herramientas de Desarrollo
+Para instalar las herramientas de linting localmente:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+### Ejecutar Verificaciones Localmente
+```bash
+# Verificar formato y sintaxis
+flake8 .
+black --check .
+isort --check-only .
+
+# Aplicar formato automáticamente
+black .
+isort .
+
+# Script de verificación completa
+# En PowerShell:
+.\scripts\pre-commit-check.ps1
+# En Bash:
+./scripts/pre-commit-check.sh
+```
+
+### Configuración
+- **Flake8**: Configuración relajada en `.flake8`
+- **Black**: Longitud de línea 100 caracteres
+- **isort**: Compatible con Black, organización automática de imports
+
+Ver más detalles en [`.github/README.md`](.github/README.md)

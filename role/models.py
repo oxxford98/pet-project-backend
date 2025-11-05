@@ -1,14 +1,15 @@
 from django.db import models
 
+
 # Create your models here.
 class Role(models.Model):
-    DIRECTOR = 'DIRECTOR'
+    DIRECTOR = "DIRECTOR"
     ADMIN = "ADMIN"
     CLIENT = "CLIENT"
     TRAINER = "TRAINER"
 
     ROLE_CHOICES = [
-        (DIRECTOR, 'Director'),
+        (DIRECTOR, "Director"),
         (ADMIN, "Administrador"),
         (CLIENT, "Cliente"),
         (TRAINER, "Entrenador"),

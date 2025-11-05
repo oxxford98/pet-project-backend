@@ -1,6 +1,7 @@
 from django.db import models
-from plan.models import Plan
+
 from canine.models import Canine
+from plan.models import Plan
 
 
 class Enrollment(models.Model):
@@ -14,4 +15,4 @@ class Enrollment(models.Model):
     deleted_at = models.DateTimeField(null=True, default=None)
 
     class Meta:
-        db_table = 'enrollments'
+        db_table = "enrollments"

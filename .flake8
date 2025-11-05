@@ -1,0 +1,50 @@
+[flake8]
+# Configuración relajada para flake8
+max-line-length = 100
+max-complexity = 15
+ignore = 
+    # E203: whitespace before ':' (conflicta con black)
+    E203,
+    # W503: line break before binary operator (estilo preferido)
+    W503,
+    # E501: line too long (manejado por black)
+    E501,
+    # F401: imported but unused (común en __init__.py)
+    F401,
+    # E402: module level import not at top of file (común en Django settings)
+    E402,
+    # W504: line break after binary operator
+    W504,
+    # E731: do not assign a lambda expression (a veces es útil)
+    E731
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .env,
+    env,
+    migrations,
+    static,
+    media,
+    .github,
+    manage.py,
+    */settings/*,
+    */migrations/*
+
+per-file-ignores =
+    # Settings files pueden tener imports no estándar
+    settings.py:E402,F401,F403,F405
+    # __init__.py files
+    __init__.py:F401,F403
+    # Test files pueden ser más flexibles
+    test_*.py:E501,F401,F811
+    tests.py:E501,F401,F811
+    # Django admin
+    admin.py:E501
+    # URLs patterns
+    urls.py:E501
+
+# No revisar ciertos tipos de archivos
+filename = *.py
