@@ -25,7 +25,7 @@ from users.api.serializers import (
 )
 from users.models import User
 from users.utils import generate_verification_code, send_password_reset_email, user_has_any_role
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.utils.timezone import now
 from django.db.models.functions import ExtractMonth, ExtractYear
 
@@ -415,3 +415,96 @@ def get_client_stats_monthly_spends(request):
         "year": year,
         "monthly_data": monthly_data
     })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_director_stats_monthly_spends(request):
+    year = timezone.now().year
+
+    enrollments = (
+        Enrollment.objects.filter(
+            deleted_at=None,
+            start_date__year=year,
+        )
+        .annotate(month=ExtractMonth("start_date"))
+        .values("month")
+        .annotate(amount=Sum("plan__price"))
+        .order_by("month")
+    )
+
+    monthly_map = {item["month"]: item["amount"] for item in enrollments}
+
+    monthly_data = []
+    for m in range(1, 13):
+        monthly_data.append({
+            "month": m,
+            "amount": monthly_map.get(m, 0)
+        })
+
+    return Response({
+        "monthly_data": monthly_data
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_global_monthly_enrollments_count(request):
+    year = timezone.now().year
+
+    enrollments = (
+        Enrollment.objects.filter(
+            deleted_at=None,
+            start_date__year=year,
+        )
+        .annotate(month=ExtractMonth("start_date"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    monthly_map = {item["month"]: item["count"] for item in enrollments}
+
+    monthly_data = []
+    for m in range(1, 13):
+        monthly_data.append({
+            "month": m,
+            "count": monthly_map.get(m, 0)
+        })
+
+    return Response({
+        "monthly_data": monthly_data
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_enrolled_by_size(request):
+
+    data = (
+        Enrollment.objects.filter(
+            is_active=True,
+            deleted_at=None
+        )
+        .values("canine__size")
+        .annotate(total=Count("id"))
+    )
+
+    size_map = {
+        1: "small",
+        2: "medium",
+        3: "large"
+    }
+
+    response = {
+        "small": 0,
+        "medium": 0,
+        "large": 0
+    }
+
+    for item in data:
+        size = item["canine__size"]
+        count = item["total"]
+        response[size_map[size]] = count
+
+    return Response(response)

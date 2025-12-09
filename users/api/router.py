@@ -10,7 +10,8 @@ from users.api.views import (
     edit_user_client,
     get_info_user,
     request_password_reset,
-    reset_password_with_code, get_client_user_stats, get_client_stats_enrollment_canine, get_client_stats_monthly_spends
+    reset_password_with_code, get_client_user_stats, get_client_stats_enrollment_canine, get_client_stats_monthly_spends,
+    get_director_stats_monthly_spends, get_global_monthly_enrollments_count, get_enrolled_by_size
 )
 
 router_user = DefaultRouter()
@@ -27,4 +28,7 @@ urlpatterns = [
     path("user/client-stats", get_client_user_stats),
     path("user/client-stats-enrollment-canine", get_client_stats_enrollment_canine),
     path("user/client-stats-monthly-spending", get_client_stats_monthly_spends),
+    path("user/director-stats-monthly-spending", get_director_stats_monthly_spends),
+    path("user/director-global-monthly-enrollments-count", get_global_monthly_enrollments_count),
+    path("user/director-enrolled-by-size", get_enrolled_by_size),
 ]
