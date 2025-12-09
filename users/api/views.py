@@ -14,6 +14,8 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from canine.models import Canine
+from enrollment.models import Enrollment
 from role.models import Role
 from users.api.serializers import (
     LoginSerializer,
@@ -23,6 +25,9 @@ from users.api.serializers import (
 )
 from users.models import User
 from users.utils import generate_verification_code, send_password_reset_email, user_has_any_role
+from django.db.models import Sum
+from django.utils.timezone import now
+from django.db.models.functions import ExtractMonth, ExtractYear
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -293,3 +298,120 @@ def reset_password_with_code(request):
     user.save(update_fields=["password", "verify_code"])
 
     return Response({"message": "Contraseña actualizada exitosamente"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_client_user_stats(request):
+    user = request.user
+
+    pets = Canine.objects.filter(
+        user=user,
+        deleted_at=None
+    )
+
+    total_pets = pets.count()
+
+    pet_ids = pets.values_list("id", flat=True)
+
+    active_enrollments = Enrollment.objects.filter(
+        canine_id__in=pet_ids,
+        is_active=True,
+        deleted_at=None
+    )
+
+    enrolled_pets = active_enrollments.count()
+
+    pending_enrollment = total_pets - enrolled_pets
+
+    total_spent_2025 = (
+        active_enrollments
+        .filter(start_date__year=2025)
+        .aggregate(total=Sum("plan__price"))
+        .get("total")
+    )
+
+    total_spent_2025 = total_spent_2025 or 0
+
+    response = {
+        "total_pets": total_pets,
+        "enrolled_pets": enrolled_pets,
+        "pending_enrollment": pending_enrollment,
+        "total_spent_2025": total_spent_2025
+    }
+
+    return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_client_stats_enrollment_canine(request):
+    user = request.user
+    today = now().date()
+
+    pets = Canine.objects.filter(user=user, deleted_at=None)
+    pet_ids = pets.values_list("id", flat=True)
+
+    active_enrollments = Enrollment.objects.select_related("canine", "plan").filter(
+        canine_id__in=pet_ids,
+        is_active=True,
+        deleted_at=None
+    )
+
+    response = []
+
+    for enr in active_enrollments:
+        end_date = enr.end_date
+
+        days_until_expiration = (end_date - today).days
+
+        response.append({
+            "canine_id": enr.canine.id,
+            "canine_name": enr.canine.name,
+            "plan_name": enr.plan.name,
+            "end_date": end_date,
+            "days_until_expiration": days_until_expiration
+        })
+
+    return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_client_stats_monthly_spends(request):
+    try:
+        year = int(request.GET.get("year"))
+    except:
+        return Response({"detail": "Debe enviar year como número."}, status=400)
+
+    user = request.user
+
+    canines = Canine.objects.filter(user=user, deleted_at=None)
+    pet_ids = canines.values_list("id", flat=True)
+
+    enrollments = (
+        Enrollment.objects.filter(
+            canine_id__in=pet_ids,
+            deleted_at=None,
+            start_date__year=year,
+        )
+        .annotate(month=ExtractMonth("start_date"))
+        .select_related("plan")
+        .values("month")
+        .annotate(amount=Sum("plan__price"))
+        .order_by("month")
+    )
+
+    monthly_map = {item["month"]: item["amount"] for item in enrollments}
+
+    monthly_data = []
+    for m in range(1, 13):
+        monthly_data.append({
+            "month": m,
+            "amount": monthly_map.get(m, 0)
+        })
+
+    return Response({
+        "year": year,
+        "monthly_data": monthly_data
+    })

@@ -10,7 +10,7 @@ from users.api.views import (
     edit_user_client,
     get_info_user,
     request_password_reset,
-    reset_password_with_code,
+    reset_password_with_code, get_client_user_stats, get_client_stats_enrollment_canine, get_client_stats_monthly_spends
 )
 
 router_user = DefaultRouter()
@@ -24,4 +24,7 @@ urlpatterns = [
     path("auth/password-reset/confirm", reset_password_with_code),
     path("user/create-client", create_user_client),
     path("user/edit-client", edit_user_client),
+    path("user/client-stats", get_client_user_stats),
+    path("user/client-stats-enrollment-canine", get_client_stats_enrollment_canine),
+    path("user/client-stats-monthly-spending", get_client_stats_monthly_spends),
 ]
