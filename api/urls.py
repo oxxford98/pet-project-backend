@@ -25,6 +25,7 @@ from canine.api.router import router_canine
 from enrollment.api.router import router_enrollment
 from plan.api.router import router_plan
 from users.api.router import router_user
+from attendance.api.router import router_attendance
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -51,4 +52,5 @@ urlpatterns = [
     path("api/canine/", include(router_canine.urls)),
     path("api/plan/", include(router_plan.urls)),
     path("api/enrollment/", include(router_enrollment.urls)),
+    path("api/attendance/", include(router_attendance.urls)),
 ]

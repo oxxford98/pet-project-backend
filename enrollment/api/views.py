@@ -88,3 +88,62 @@ def get_enrollment_active_by_canine(request, canine_id):
     }
 
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def get_enrollment_active_to_director(request):
+    data = request.data
+
+    size = data.get("size")
+    breed = data.get("breed")
+    plan_id = data.get("plan")
+
+    queryset = Enrollment.objects.select_related("canine", "plan").filter(
+        is_active=True,
+        deleted_at=None
+    )
+
+    if size:
+        queryset = queryset.filter(canine__size=size)
+
+    if breed:
+        queryset = queryset.filter(canine__breed__icontains=breed)
+
+    if plan_id:
+        queryset = queryset.filter(plan_id=plan_id)
+
+    response = []
+
+    for enrollment in queryset:
+        response.append({
+            "id": enrollment.id,
+            "start_date": enrollment.start_date,
+            "end_date": enrollment.end_date,
+            "is_active": enrollment.is_active,
+            "created_at": enrollment.created_at,
+            "updated_at": enrollment.updated_at,
+
+            "canine": {
+                "id": enrollment.canine.id,
+                "name": enrollment.canine.name,
+                "breed": enrollment.canine.breed,
+                "size": enrollment.canine.size,
+                "birth_date": enrollment.canine.birth_date,
+                "user_id": enrollment.canine.user_id,
+                "created_at": enrollment.canine.created_at,
+                "updated_at": enrollment.canine.updated_at,
+            },
+            "plan": {
+                "id": enrollment.plan.id,
+                "name": enrollment.plan.name,
+                "description": enrollment.plan.description,
+                "duration_days": enrollment.plan.duration_days,
+                "transport_type": enrollment.plan.transport_type,
+                "price": str(enrollment.plan.price),
+                "created_at": enrollment.plan.created_at,
+                "updated_at": enrollment.plan.updated_at,
+            }
+        })
+
+    return Response(response)

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "canine",
     "plan",
     "enrollment",
+    "attendance"
 ]
 
 MIDDLEWARE = [
