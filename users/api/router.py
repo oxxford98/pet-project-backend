@@ -12,7 +12,7 @@ from users.api.views import (
     request_password_reset,
     reset_password_with_code, get_client_user_stats, get_client_stats_enrollment_canine, get_client_stats_monthly_spends,
     get_director_stats_monthly_spends, get_global_monthly_enrollments_count, get_enrolled_by_size, get_top_plans_enrollments,
-    get_recent_enrollments, get_next_expiring_enrollments, get_top_clients_with_pets, get_top_plans_by_income
+    get_recent_enrollments, get_next_expiring_enrollments, get_top_clients_with_pets, get_top_plans_by_income, get_clients_to_director
 )
 
 router_user = DefaultRouter()
@@ -37,4 +37,5 @@ urlpatterns = [
     path("user/director-next-expiring-enrollments", get_next_expiring_enrollments),
     path("user/director-top-clients-with-pets", get_top_clients_with_pets),
     path("user/director-top-plans-by-income", get_top_plans_by_income),
+    path("user/director-clients-list", get_clients_to_director),
 ]

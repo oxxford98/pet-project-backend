@@ -658,3 +658,11 @@ def get_top_plans_by_income(request):
         })
 
     return Response(response, status=200)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_clients_to_director(request):
+    users = User.objects.filter(role= 3, deleted_at=None)  # Assuming role ID 3 corresponds to CLIENT
+    serializer = LoginSerializer(users, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
