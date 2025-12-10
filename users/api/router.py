@@ -11,7 +11,8 @@ from users.api.views import (
     get_info_user,
     request_password_reset,
     reset_password_with_code, get_client_user_stats, get_client_stats_enrollment_canine, get_client_stats_monthly_spends,
-    get_director_stats_monthly_spends, get_global_monthly_enrollments_count, get_enrolled_by_size
+    get_director_stats_monthly_spends, get_global_monthly_enrollments_count, get_enrolled_by_size, get_top_plans_enrollments,
+    get_recent_enrollments, get_next_expiring_enrollments, get_top_clients_with_pets, get_top_plans_by_income
 )
 
 router_user = DefaultRouter()
@@ -31,4 +32,9 @@ urlpatterns = [
     path("user/director-stats-monthly-spending", get_director_stats_monthly_spends),
     path("user/director-global-monthly-enrollments-count", get_global_monthly_enrollments_count),
     path("user/director-enrolled-by-size", get_enrolled_by_size),
+    path("user/director-top-plans-enrollments", get_top_plans_enrollments),
+    path("user/director-recent-enrollments", get_recent_enrollments),
+    path("user/director-next-expiring-enrollments", get_next_expiring_enrollments),
+    path("user/director-top-clients-with-pets", get_top_clients_with_pets),
+    path("user/director-top-plans-by-income", get_top_plans_by_income),
 ]

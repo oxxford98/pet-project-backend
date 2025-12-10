@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 import requests
 from rest_framework import status
@@ -508,3 +508,153 @@ def get_enrolled_by_size(request):
         response[size_map[size]] = count
 
     return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_top_plans_enrollments(request):
+
+    data = (
+        Enrollment.objects.filter(
+            deleted_at=None
+        )
+        .values("plan__name")
+        .annotate(enrollments_count=Count("id"))
+        .order_by("-enrollments_count")[:5]
+    )
+
+    response = [
+        {
+            "plan_name": item["plan__name"],
+            "enrollments_count": item["enrollments_count"]
+        }
+        for item in data
+    ]
+
+    return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_recent_enrollments(request):
+
+    enrollments = (
+        Enrollment.objects.filter(
+            is_active=True,
+            deleted_at=None
+        )
+        .select_related("canine", "canine__user", "plan")
+        .order_by("-created_at")[:10]
+    )
+
+    response = []
+    for e in enrollments:
+        response.append({
+            "canine_name": e.canine.name,
+            "client_name": e.canine.user.get_full_name() or e.canine.user.username,
+            "plan_name": e.plan.name,
+            "start_date": e.start_date,
+            "is_active": e.is_active
+        })
+
+    return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_next_expiring_enrollments(request):
+
+    today = date.today()
+
+    enrollments = (
+        Enrollment.objects.filter(
+            is_active=True,
+            deleted_at=None,
+            end_date__gte=today  # solo las que aún no han vencido
+        )
+        .select_related("canine", "canine__user", "plan")
+        .order_by("end_date")[:10]  # las 10 próximas a vencer
+    )
+
+    response = []
+    for e in enrollments:
+        days_remaining = (e.end_date - today).days
+
+        response.append({
+            "canine_name": e.canine.name,
+            "client_name": e.canine.user.get_full_name() or e.canine.user.username,
+            "plan_name": e.plan.name,
+            "end_date": e.end_date,
+            "days_remaining": days_remaining
+        })
+
+    return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_top_clients_with_pets(request):
+    clients = (
+        User.objects.filter(canine__deleted_at=None)
+        .annotate(total_pets=Count("canine"))
+        .filter(total_pets__gt=0)
+        .order_by("-total_pets")[:10]  # Limit 10
+    )
+
+    response = []
+
+    for client in clients:
+        active_enrollments = Enrollment.objects.filter(
+            canine__user=client,
+            is_active=True,
+            deleted_at=None
+        ).count()
+
+        response.append({
+            "client_name": f"{client.first_name} {client.last_name}",
+            "email": client.email,
+            "total_pets": client.total_pets,
+            "active_enrollments": active_enrollments,
+        })
+
+    return Response(response, status=200)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_top_plans_by_income(request):
+
+    plan_stats = (
+        Enrollment.objects.filter(
+            deleted_at=None
+        )
+        .select_related("plan")
+        .values("plan__id", "plan__name")
+        .annotate(
+            enrollments_count=Count("id"),
+            total_income=Sum("plan__price")
+        )
+        .filter(total_income__gt=0)
+        .order_by("-total_income")[:10]  # Top 5
+    )
+
+    # Calcular el total de ingresos
+    total_income_global = sum(item["total_income"] for item in plan_stats)
+
+    response = []
+
+    for item in plan_stats:
+        percentage = (
+            (item["total_income"] / total_income_global) * 100
+            if total_income_global > 0
+            else 0
+        )
+
+        response.append({
+            "plan_name": item["plan__name"],
+            "enrollments_count": item["enrollments_count"],
+            "total_income": item["total_income"],
+            "percentage": round(percentage, 2)
+        })
+
+    return Response(response, status=200)
